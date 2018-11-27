@@ -1,7 +1,7 @@
 Treść zadania do wykonania:
 
 Część obowiązkowa do każdego zadania:
-1. Platforma jezdna nie może uderzyć w jakąkolwiek przeszkodę podczas jazdy do przodu lub manewrowania (dotyczy to zarówno przeszkód stacjonarne jak i pojawiających się nagle)
+1. Platforma jezdna nie może uderzyć w jakąkolwiek przeszkodę podczas jazdy do przodu lub manewrowania (dotyczy to zarówno przeszkód stacjonarnych jak i pojawiających się nagle na trasie pojazdu)
 2. Prędkość platform musi być regulowana z wykorzystaniem algorytmów regulacji PID lub wykorzystujących Fuzzy Logic (logikę rozmytą) na podstawie pozycji obiektów i przeszkód. Dotyczy to zarówno prędkości skrętu jak i jazdy na wprost.
 
 
