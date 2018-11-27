@@ -1,6 +1,11 @@
-Treśc zadania do wykonania:
+Treść zadania do wykonania:
 
-Częśc minimum:
+Część obowiązkowa do każdego zadania:
+1. Platforma jezdna nie może uderzyć w jakąkolwiek przeszkodę podczas jazdy do przodu lub manewrowania (dotyczy to zarówno przeszkód stacjonarne jak i pojawiających się nagle)
+2. Prędkość platform musi być regulowana z wykorzystaniem algorytmów regulacji PID lub wykorzystujących Fuzzy Logic (logikę rozmytą) na podstawie pozycji przeszkód i obiektów. Dotyczy to zarówno prędkości skrętu jak i jazdy na wprost.
+
+
+Część minimum:
 1. Znalezienie obiektów o określonym kolorze na obrazie
 2. Wykrycie obiektu który spełnia wymagania - "okrągła piłka"
 3. Skierowanie platformy jezdnej w stronę wykrytego obiektu i dojechanie do niego na odległość 30 cm (+/- 5 cm)
