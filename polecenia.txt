@@ -1,0 +1,7 @@
+cd ~/CV/opencv-3.4.3/build/
+sudo make uninstall
+sudo apt-get install libhdf5-dev libhdf5-serial-dev 
+sudo apt-get install libqtwebkit4 libqt4-test
+pip3 install opencv-contrib-python==3.4.1.15
+
+

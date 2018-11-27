@@ -1,7 +1,11 @@
+# parts of the code are based on https://www.pyimagesearch.com/2016/01/04/unifying-picamera-and-cv2-videocapture-into-a-single-class-with-opencv/
+# before rnning the code install imutils for python3 (pip3 install imutils)
+
 import time
+from imutils.video import VideoStream
 import serial
-from picamera.array import PiRGBArray
-from picamera import PiCamera
+# from picamera.array import PiRGBArray
+# from picamera import PiCamera
 import numpy as np
 import cv2
 # import numpy as np
@@ -17,16 +21,22 @@ def translate(value, oldMin, oldMax, newMin=-100, newMax=100):
 
     return int(NewValue)
 
+usesPiCamera = True
 
-camera = PiCamera()
-camera.framerate = 60
+# camera = PiCamera()
+# camera.framerate = 60
 cameraResolution = (640, 480)
-camera.resolution = cameraResolution
+# camera.resolution = cameraResolution
 
-# camera.awb_mode = 'tungsten'
-camera.vflip = camera.hflip = True
-camera.video_stabilization = True
-rawCapture = PiRGBArray(camera, size=cameraResolution)
+# # camera.awb_mode = 'tungsten'
+# camera.vflip = camera.hflip = True
+# camera.video_stabilization = True
+# rawCapture = PiRGBArray(camera, size=cameraResolution)
+
+# initialize the video stream and allow the cammera sensor to warmup
+vs = VideoStream(usePiCamera=usesPiCamera, resolution=cameraResolution, framerate=60).start()
+time.sleep(2.0)
+
 
 # cap = cv2.VideoCapture(0)
 blueLower = (0, 100, 50)
@@ -39,13 +49,13 @@ roiSize = (6, 6) # roi size on the scaled down image (converted to HSV)
 # initialize serial communication
 ser = serial.Serial(port='/dev/ttyACM0', baudrate=57600, timeout=0.05)
 
-# while True:
-for cameraFrame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
+while True:
+# for cameraFrame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
     loopStart = time.time()
     if not paused:
         # ret, frame = cap.read()
         # frame = cv2.flip(frame, flipCode=-1)
-        frame = cameraFrame.array
+        frame = vs.read()
         
         height, width = frame.shape[0:2]
         scaleFactor = 4
@@ -110,13 +120,16 @@ for cameraFrame in camera.capture_continuous(rawCapture, format="bgr", use_video
             scaled = (translate(distanceVector[0], -width//2, width//2), translate(distanceVector[1], -height//2, height//2) )
             # print("Vector scaled: {}".format(scaled))
             cv2.line(upscaledColor, screenMiddle, biggestObjectMiddle, (0, 0, 255))
-            yaw = 'y {}\n'.format(scaled[0])
-            b_yaw = bytes(yaw, 'utf-8') # or 'ascii'
-            pitch = 'p {}\n'.format(scaled[1])
-            b_pitch = bytes(pitch, 'utf-8') # or 'ascii'
-            ser.write(b_yaw)
+            packet = '<packet, {}, {}>'.format(scaled[0], scaled[1])
+            packetBytes = bytes(packet, 'utf-8')
+            # yaw = 'y {}\n'.format(scaled[0])
+            # b_yaw = bytes(yaw, 'utf-8') # or 'ascii'
+            # pitch = 'p {}\n'.format(scaled[1])
+            # b_pitch = bytes(pitch, 'utf-8') # or 'ascii'
+            ser.write(packetBytes)
+            # ser.write(b_yaw)
             # print(ser.read_all())
-            ser.write(b_pitch)
+            # ser.write(b_pitch)
             # print(ser.read_all())
             
 
@@ -160,8 +173,10 @@ for cameraFrame in camera.capture_continuous(rawCapture, format="bgr", use_video
         # pause/unpause arduino camera movement
         ser.write(bytes('d', 'utf-8'))
     
-    rawCapture.truncate(0)
+    # rawCapture.truncate(0)
     loopEnd= time.time()
     print("loop execution took {:3.2f}ms".format((loopEnd - loopStart)*1000))
     
+# cleanup
 cv2.destroyAllWindows()
+vs.stop()
