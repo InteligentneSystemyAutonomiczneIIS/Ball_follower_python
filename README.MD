@@ -2,14 +2,13 @@ Treść zadania do wykonania:
 
 Część obowiązkowa do każdego zadania:
 1. Platforma jezdna nie może uderzyć w jakąkolwiek przeszkodę podczas jazdy do przodu lub manewrowania (dotyczy to zarówno przeszkód stacjonarne jak i pojawiających się nagle)
-2. Prędkość platform musi być regulowana z wykorzystaniem algorytmów regulacji PID lub wykorzystujących Fuzzy Logic (logikę rozmytą) na podstawie pozycji przeszkód i obiektów. Dotyczy to zarówno prędkości skrętu jak i jazdy na wprost.
+2. Prędkość platform musi być regulowana z wykorzystaniem algorytmów regulacji PID lub wykorzystujących Fuzzy Logic (logikę rozmytą) na podstawie pozycji obiektów i przeszkód. Dotyczy to zarówno prędkości skrętu jak i jazdy na wprost.
 
 
 Część minimum:
 1. Znalezienie obiektów o określonym kolorze na obrazie
 2. Wykrycie obiektu który spełnia wymagania - "okrągła piłka"
-3. Skierowanie platformy jezdnej w stronę wykrytego obiektu i dojechanie do niego na odległość 30 cm (+/- 5 cm)
-
+3. Skierowanie platformy jezdnej w stronę wykrytego obiektu typu "piłka" i dojechanie do niego na odległość 30 cm (+/- 5 cm)
 Platforma musi pracowac w trybie ciągłego śledzenia obiektu - zmiana położenia obiektu ma wymusic zmianę położenia platformy
 
 
