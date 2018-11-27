@@ -1,5 +1,5 @@
 # parts of the code are based on https://www.pyimagesearch.com/2016/01/04/unifying-picamera-and-cv2-videocapture-into-a-single-class-with-opencv/
-# before rnning the code install imutils for python3 (pip3 install imutils)
+# before running the code install imutils for python3 (pip3 install imutils)
 
 import time
 from imutils.video import VideoStream
@@ -8,20 +8,16 @@ import serial
 # from picamera import PiCamera
 import numpy as np
 import cv2
-# import numpy as np
-# import typing
 
 
 def translate(value, oldMin, oldMax, newMin=-100, newMax=100):
     # Figure out how 'wide' each range is
     oldRange = oldMax - oldMin
     newRange = newMax - newMin
-
     NewValue = (((value - oldMin) * newRange) / oldRange) + newMin
-
     return int(NewValue)
 
-usesPiCamera = True
+usesPiCamera = False
 
 # camera = PiCamera()
 # camera.framerate = 60
@@ -37,25 +33,23 @@ cameraResolution = (640, 480)
 vs = VideoStream(usePiCamera=usesPiCamera, resolution=cameraResolution, framerate=60).start()
 time.sleep(2.0)
 
-
-# cap = cv2.VideoCapture(0)
-blueLower = (0, 100, 50)
-blueUpper = (100, 255, 255)
-colorTolerance = 10
+colorLower = (0, 100, 50)
+colorUpper = (100, 255, 255)
+colorTolerance = 3
 paused = False
-roiSize = (6, 6) # roi size on the scaled down image (converted to HSV)
+roiSize = (16, 16) # roi size on the scaled down image (converted to HSV)
 
 
-# initialize serial communication
-ser = serial.Serial(port='/dev/ttyACM0', baudrate=57600, timeout=0.05)
+# # initialize serial communication
+# ser = serial.Serial(port='/dev/ttyACM0', baudrate=57600, timeout=0.05)
 
 while True:
 # for cameraFrame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
     loopStart = time.time()
     if not paused:
-        # ret, frame = cap.read()
-        # frame = cv2.flip(frame, flipCode=-1)
+
         frame = vs.read()
+        # frame = cv2.flip(frame, flipCode=-1)
         
         height, width = frame.shape[0:2]
         scaleFactor = 4
@@ -71,10 +65,10 @@ while True:
         roi = resizedHSV[newHeight//2 - roiSize[0]//2 : newHeight //2 + roiSize[0]//2, newWidth//2 - roiSize[1]//2 : newWidth//2 + roiSize[1]//2, :]
         # roi = resizedHSV[10*newHeight//20 : 12*newHeight//20, 10*newWidth//20 : 12*newWidth // 20, :]
         
-        blueLowerWithTolerance = (blueLower[0] - colorTolerance,) + blueLower[1:]
-        blueUpperWithTolerance = (blueUpper[0] + colorTolerance,) + blueUpper[1:]
+        colorLowerWithTolerance = (colorLower[0] - colorTolerance,) + colorLower[1:]
+        colorUpperWithTolerance = (colorUpper[0] + colorTolerance,) + colorUpper[1:]
 
-        mask = cv2.inRange(resizedHSV, blueLowerWithTolerance, blueUpperWithTolerance)
+        mask = cv2.inRange(resizedHSV, colorLowerWithTolerance, colorUpperWithTolerance)
         cv2.erode(mask, None, iterations=5)
         cv2.dilate(mask, None, iterations=5)
 
@@ -119,17 +113,13 @@ while True:
             # print("Vector: {}".format(distanceVector))
             scaled = (translate(distanceVector[0], -width//2, width//2), translate(distanceVector[1], -height//2, height//2) )
             # print("Vector scaled: {}".format(scaled))
+            pitch = scaled[1] # up-down
+            yaw = scaled[0] # left-right
             cv2.line(upscaledColor, screenMiddle, biggestObjectMiddle, (0, 0, 255))
-            packet = '<packet, {}, {}>'.format(scaled[0], scaled[1])
+            packet = '<packet, {}, {}>'.format(yaw, pitch)
             packetBytes = bytes(packet, 'utf-8')
-            # yaw = 'y {}\n'.format(scaled[0])
-            # b_yaw = bytes(yaw, 'utf-8') # or 'ascii'
-            # pitch = 'p {}\n'.format(scaled[1])
-            # b_pitch = bytes(pitch, 'utf-8') # or 'ascii'
-            ser.write(packetBytes)
-            # ser.write(b_yaw)
-            # print(ser.read_all())
-            # ser.write(b_pitch)
+            
+            # ser.write(packetBytes)
             # print(ser.read_all())
             
 
@@ -159,8 +149,14 @@ while True:
         avg_s /= i
         avg_v /= i
         print("HUE:{}, SAT:{}, VAL:{}".format(avg_h, avg_s, avg_v))
-        blueLower = (max(0,avg_h), max(0, avg_s - 50), max(0,avg_v - 50))
-        blueUpper = (min (255, avg_h), min(255, avg_s + 50), min(255, avg_v + 50))
+        colorLower = (max(0,avg_h), max(0, avg_s - 50), max(0,avg_v - 50))
+        colorUpper = (min (255, avg_h), min(255, avg_s + 50), min(255, avg_v + 50))
+    elif key == ord('z'):
+        h = roi[:,:,0]
+        s = roi[:,:,1]
+        v = roi[:,:,2]
+        colorLower = (int(np.min(h)), max(0, int(np.min(s)-20 )), max(0, int(np.min(v)-20)))
+        colorUpper = (int(np.max(h)), min(255, int(np.max(s)+20)), min(255, int(np.max(v)+20)))
     elif key == ord('w'):
         colorTolerance = min(colorTolerance + 1, 50)
         print("New color range: {}".format(colorTolerance))
