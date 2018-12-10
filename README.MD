@@ -21,5 +21,5 @@ Zadanie dodatkowe 2 - wykrywanie obiektu o skomplikowanych kształtach i cechach
 1. Wykrycie na ekranie obiektu o określonych cechach - innej platformy jezdnej
 2. Podążanie za platformą i utrzymywanie się od niej w odległości 20-50 cm
 
-
+W katalogach znajdują się projekty ułątwiające pracę nad każdym z zadań
 
