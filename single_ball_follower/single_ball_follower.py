@@ -2,8 +2,8 @@
 # before running the code install imutils for python3 (pip3 install imutils)
 
 import time
-from imutils.video import VideoStream
-import serial
+# from imutils.video import VideoStream
+# import serial
 # from picamera.array import PiRGBArray
 # from picamera import PiCamera
 import numpy as np
@@ -30,7 +30,9 @@ cameraResolution = (640, 480)
 # rawCapture = PiRGBArray(camera, size=cameraResolution)
 
 # initialize the video stream and allow the cammera sensor to warmup
-vs = VideoStream(usePiCamera=usesPiCamera, resolution=cameraResolution, framerate=60).start()
+# vs = VideoStream(usePiCamera=usesPiCamera, resolution=cameraResolution, framerate=60).start()
+cap = cv2.VideoCapture('nvarguscamerasrc ! video/x-raw(memory:NVMM), width=3820, height=2464, format=(string)NV12, framerate=21/1 ! nvvidconv flip-method=0 ! video/x-raw, width=960, height=616, format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink' , cv2.CAP_GSTREAMER)
+
 time.sleep(2.0)
 
 colorLower = (0, 100, 50)
@@ -48,7 +50,7 @@ while True:
     loopStart = time.time()
     if not paused:
 
-        frame = vs.read()
+        ret_val, frame = cap.read()
         # frame = cv2.flip(frame, flipCode=-1)
         
         height, width = frame.shape[0:2]
@@ -116,8 +118,8 @@ while True:
             pitch = scaled[1] # up-down
             yaw = scaled[0] # left-right
             cv2.line(upscaledColor, screenMiddle, biggestObjectMiddle, (0, 0, 255))
-            packet = '<packet, {}, {}>'.format(yaw, pitch)
-            packetBytes = bytes(packet, 'utf-8')
+            # packet = '<packet, {}, {}>'.format(yaw, pitch)
+            # packetBytes = bytes(packet, 'utf-8')
             
             # ser.write(packetBytes)
             # print(ser.read_all())
