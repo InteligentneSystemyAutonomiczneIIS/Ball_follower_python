@@ -74,7 +74,7 @@ while True:
         cv2.erode(mask, None, iterations=5)
         cv2.dilate(mask, None, iterations=5)
 
-        (_,contours, hierarchy) = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
         boundingBoxes = []
         biggestObject_BoundingBox = None
