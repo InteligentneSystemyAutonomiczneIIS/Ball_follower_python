@@ -31,7 +31,7 @@ cameraResolution = (640, 480)
 
 # initialize the video stream and allow the cammera sensor to warmup
 # vs = VideoStream(usePiCamera=usesPiCamera, resolution=cameraResolution, framerate=60).start()
-cap = cv2.VideoCapture('nvarguscamerasrc ! video/x-raw(memory:NVMM), width=3820, height=2464, format=(string)NV12, framerate=21/1 ! nvvidconv flip-method=0 ! video/x-raw, width=960, height=616, format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink' , cv2.CAP_GSTREAMER)
+cap = cv2.VideoCapture('nvarguscamerasrc ! video/x-raw(memory:NVMM), width=3820, height=1848, format=(string)NV12, framerate=28/1 ! nvvidconv flip-method=0 ! video/x-raw, width=640, height=480, format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink' , cv2.CAP_GSTREAMER)
 
 time.sleep(2.0)
 
@@ -54,7 +54,7 @@ while True:
         # frame = cv2.flip(frame, flipCode=-1)
         
         height, width = frame.shape[0:2]
-        scaleFactor = 4
+        scaleFactor = 1
         newWidth, newHeight = width//scaleFactor, height//scaleFactor
 
 
