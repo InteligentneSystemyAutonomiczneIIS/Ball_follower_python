@@ -18,6 +18,9 @@ dataPacket packet;
 
 boolean newData = false;
 
+
+int yawRequested = 0;
+int pitchRequested = 0;
 //============
 
 void setup() {
@@ -49,19 +52,65 @@ void setup() {
 
 //============
 
+
 void loop() {
-    recvWithStartEndMarkers();
 
     // Check if servos finished movement
-    if (pitchMoveTimer > servoWaitTimePitch)
+    if (isYawServoMoving == true )
     {
-        isPitchServoMoving = false;
+        if (pitchMoveTimer > servoWaitTimePitch)
+        {
+            // calculate how long the move will take
+            float yawActualRequested = yawRequested * damping;
+            float yawReal = yawCurrent - yawActualRequested;
+
+            yawRequested -= yawActualRequested;
+
+            if (yawRequested < abs(deadZone))
+            {
+                Serial.println("yaw deadzone reached");
+                isYawServoMoving = false;
+            }
+
+            servoWaitTimeYaw = yawActualRequested * servoMillisecondsPerDegree;
+            
+            // move servo
+            moveServo(ServoSelector::Yaw, (int)yawReal);
+            
+            //set timing variables and block movement
+            yawMoveTimer = 0;
+        }
     }
-    if (yawMoveTimer > servoWaitTimeYaw)
+    if (isPitchServoMoving == true)
     {
-        isYawServoMoving = false;
+        if (yawMoveTimer > servoWaitTimeYaw)
+        {
+            // calculate how long the move will take
+            float pitchActualRequested = pitchRequested * damping;
+            float pitchReal = pitchCurrent - pitchActualRequested;
+
+            pitchRequested -= pitchActualRequested;
+
+            if (pitchRequested < abs(deadZone))
+            {
+                Serial.println("pitch deadzone reached");
+                isPitchServoMoving = false;
+            }
+
+            servoWaitTimePitch = pitchActualRequested * servoMillisecondsPerDegree;
+            
+            // move servo
+            moveServo(ServoSelector::Pitch, (int)pitchReal);
+            
+            //set timing variables and block movement
+            pitchMoveTimer = 0;
+        }
+        
     }
 
+
+    // parse input data
+    recvWithStartEndMarkers();
 
     if (newData == true) {
         strcpy(tempChars, receivedChars);
@@ -74,49 +123,21 @@ void loop() {
         {
             if (isStopped == false)
             {
-                // move servos helper
-                int yawRequested = packet.first;
-                int pitchRequested = packet.second;
-                
-                // Achilles and the Tortoise algorithm
+
                 if (isYawServoMoving == false)
                 {
-                    // calculate how long the move will take
-                    float yawActualRequested = yawRequested * damping;
-                    float yawReal = yawCurrent - yawActualRequested;
-
-                    servoWaitTimeYaw = yawReal * servoMillisecondsPerDegree;
-                    
-                    // move servo
-                    moveServo(ServoSelector::Yaw, (int)yawReal);
-                    
-                    //set timing variables and block movement
-                    isYawServoMoving = true;
-                    yawMoveTimer = 0;
+                    yawRequested = packet.first;
+                    isYawServoMoving = true;     
 
                 }
-                else{
-                    // ignore the packet
-                }
-
                 if (isPitchServoMoving == false)
                 {
-                    // calculate how long the move will take
-                    float pitchActualRequested = pitchRequested * damping;
-                    float pitchReal = pitchCurrent - pitchActualRequested;
-
-                    servoWaitTimePitch = pitchReal * servoMillisecondsPerDegree;
-                    
-                    // move servo
-                    moveServo(ServoSelector::Pitch, (int)pitchReal);
-                    
-                    //set timing variables and block movement
+                    pitchRequested = packet.second;
                     isPitchServoMoving = true;
-                    pitchMoveTimer = 0;
+
                 }
-                else{
-                    // ignore the packet
-                }
+
+                 
             }
 
         }

@@ -1,5 +1,8 @@
 # parts of the code are based on https://www.pyimagesearch.com/2016/01/04/unifying-picamera-and-cv2-videocapture-into-a-single-class-with-opencv/
 # before running the code install imutils for python3 (from https://github.com/pawelplodzpl/imutils)
+# in case of problems with camera image run:
+# sudo systemctl restart nvargus daemon
+
 
 import sys
 import time
