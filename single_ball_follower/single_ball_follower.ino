@@ -5,9 +5,11 @@ This code is based on the examples at http://forum.arduino.cc/index.php?topic=39
 
 // Example 5 - parsing text and numbers with start and end markers in the stream
 
-#include "helper.h"
+#include "variables.h"
+#include "functions.hpp"
+// #include "helper.h"
 
-const byte numChars = 32;
+const byte numChars = 64;
 char receivedChars[numChars];
 char tempChars[numChars];        // temporary array for use when parsing
 
@@ -19,22 +21,116 @@ boolean newData = false;
 //============
 
 void setup() {
-    Serial.begin(9600);
+
+    initSerial(57600);
     Serial.println("This demo expects 3 pieces of data - text, an integer and a floating point value");
     Serial.println("Enter data in this style <HelloWorld, 12, 24.7>  ");
     Serial.println();
+
+
+
+    initMotors();
+
+    // Each platform has to do this independently, checked manually
+    calibrateServo(ServoSelector::Yaw, 80);
+    calibrateServo(ServoSelector::Pitch, 58);
+
+    initServos();
+    centerServos();
+
+    initESP826();
+    // initLED();
+    Brake();
+    delay(500);
+
+    Serial.println("Initalization ended");
+
 }
 
 //============
 
 void loop() {
     recvWithStartEndMarkers();
+
+    // Check if servos finished movement
+    if (pitchMoveTimer > servoWaitTimePitch)
+    {
+        isPitchServoMoving = false;
+    }
+    if (yawMoveTimer > servoWaitTimeYaw)
+    {
+        isYawServoMoving = false;
+    }
+
+
     if (newData == true) {
         strcpy(tempChars, receivedChars);
             // this temporary copy is necessary to protect the original data
             //   because strtok() used in parseData() replaces the commas with \0
         packet = parseData();
         showParsedData(packet);
+
+        if (strcmp(packet.message, "servo") == 0)
+        {
+            if (isStopped == false)
+            {
+                // move servos helper
+                int yawRequested = packet.first;
+                int pitchRequested = packet.second;
+                
+                // Achilles and the Tortoise algorithm
+                if (isYawServoMoving == false)
+                {
+                    // calculate how long the move will take
+                    float yawActualRequested = yawRequested * damping;
+                    float yawReal = yawCurrent - yawActualRequested;
+
+                    servoWaitTimeYaw = yawReal * servoMillisecondsPerDegree;
+                    
+                    // move servo
+                    moveServo(ServoSelector::Yaw, (int)yawReal);
+                    
+                    //set timing variables and block movement
+                    isYawServoMoving = true;
+                    yawMoveTimer = 0;
+
+                }
+                else{
+                    // ignore the packet
+                }
+
+                if (isPitchServoMoving == false)
+                {
+                    // calculate how long the move will take
+                    float pitchActualRequested = pitchRequested * damping;
+                    float pitchReal = pitchCurrent - pitchActualRequested;
+
+                    servoWaitTimePitch = pitchReal * servoMillisecondsPerDegree;
+                    
+                    // move servo
+                    moveServo(ServoSelector::Pitch, (int)pitchReal);
+                    
+                    //set timing variables and block movement
+                    isPitchServoMoving = true;
+                    pitchMoveTimer = 0;
+                }
+                else{
+                    // ignore the packet
+                }
+            }
+
+        }
+
+        if (strcmp(packet.message, "stop") == 0)
+        {
+            isStopped = true;
+        }
+
+        if (strcmp(packet.message, "start") == 0)
+        {
+            isStopped = false;
+        }
+
         newData = false;
     }
 }
@@ -85,10 +181,10 @@ dataPacket parseData() {      // split the data into its parts
     strcpy(tmpPacket.message, strtokIndx); // copy it to messageFromPC
  
     strtokIndx = strtok(NULL, ","); // this continues where the previous call left off
-    tmpPacket.packet_int = atoi(strtokIndx);     // convert this part to an integer
+    tmpPacket.first = atoi(strtokIndx);     // convert this part to an integer
 
     strtokIndx = strtok(NULL, ",");
-    tmpPacket.packet_float = atof(strtokIndx);     // convert this part to a float
+    tmpPacket.second = atof(strtokIndx);     // convert this part to a float
 
     return tmpPacket;
 }
@@ -97,8 +193,8 @@ dataPacket parseData() {      // split the data into its parts
 void showParsedData(dataPacket packet) {
     Serial.print("Message ");
     Serial.println(packet.message);
-    Serial.print("Integer ");
-    Serial.println(packet.packet_int);
-    Serial.print("Float ");
-    Serial.println(packet.packet_float);
+    Serial.print("Yaw ");
+    Serial.println(packet.first);
+    Serial.print("Pitch ");
+    Serial.println(packet.second);
 }

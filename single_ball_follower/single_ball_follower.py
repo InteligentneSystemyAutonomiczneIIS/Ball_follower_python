@@ -6,7 +6,7 @@ import time
 import imutils
 from imutils.video import JetsonVideoStream
 # from imutils.video import VideoStream
-# import serial
+import serial
 
 import numpy as np
 import cv2
@@ -74,15 +74,19 @@ paused = False
 ######## Initialization
 
 # vs = VideoStream(usePiCamera=usesPiCamera, resolution=cameraResolution, framerate=60).start()
-vs = JetsonVideoStream(outputResolution=frameResolution, gain=5.000)
+vs = JetsonVideoStream(outputResolution=frameResolution)
 
 vs.start()
 
 # # initialize serial communication
-# ser = serial.Serial(port='/dev/ttyACM0', baudrate=57600, timeout=0.05)
+ser = serial.Serial(port='/dev/ttyACM0', baudrate=57600, timeout=0.05)
 
 time.sleep(2.0)
 
+
+# pause camera movement
+
+ser.write(bytes('<stop, 0, 0>', 'utf-8') )
 
 ######## Main loop
 
@@ -140,11 +144,11 @@ while True:
                 
                 
                 cv2.line(frame, screenMidPoint, biggestObjectMidPoint, (0, 0, 255))
-                # packet = '<servo, {}, {}>'.format(yaw, pitch)
-                # packetBytes = bytes(packet, 'utf-8')
+                packet = '<servo, {}, {}>'.format(yaw, pitch)
+                packetBytes = bytes(packet, 'utf-8')
                 
-                # ser.write(packetBytes)
-                # print(ser.read_all())
+                ser.write(packetBytes)
+                
             else:
                 cv2.rectangle(frame, (x, y), ((x+w), (y+h)), (255, 255, 0), thickness=2)
                  
@@ -194,7 +198,16 @@ while True:
         # pause/unpause camera movement
         packet = '<stop, 0, 0>'
         packetBytes = bytes(packet, 'utf-8')  
-        # ser.write(packetBytes)
+        ser.write(packetBytes)
+    elif key == ord('f'):
+        # pause/unpause camera movement
+        packet = '<start, 0, 0>'
+        packetBytes = bytes(packet, 'utf-8')  
+        ser.write(packetBytes)
+
+
+
+    print(ser.read_all())
 
     loopEnd = time.time()
     print("loop execution took {:3.2f}ms".format((loopEnd - loopStart)*1000))
@@ -203,7 +216,7 @@ while True:
     
 # cleanup
 
-# ser.close()
+ser.close()
 cv2.destroyAllWindows()
 
 # to cleanly stop frame grabbing thread
