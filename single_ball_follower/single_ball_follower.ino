@@ -25,7 +25,7 @@ int pitchRequested = 0;
 
 void setup() {
 
-    initSerial(57600);
+    initSerial(115200);
     Serial.println("This demo expects 3 pieces of data - text, an integer and a floating point value");
     Serial.println("Enter data in this style <HelloWorld, 12, 24.7>  ");
     Serial.println();
@@ -46,7 +46,7 @@ void setup() {
     Brake();
     delay(500);
 
-    Serial.println("Initalization ended");
+    // Serial.println("Initalization ended");
 
 }
 
@@ -58,7 +58,7 @@ void loop() {
     // Check if servos finished movement
     if (isYawServoMoving == true )
     {
-        if (pitchMoveTimer > servoWaitTimePitch)
+        if (yawMoveTimer > servoWaitTimeYaw)
         {
             // calculate how long the move will take
             float yawActualRequested = yawRequested * damping;
@@ -66,13 +66,17 @@ void loop() {
 
             yawRequested -= yawActualRequested;
 
-            if (yawRequested < abs(deadZone))
+            if (abs(yawRequested) < deadZone || yawReal > yawMax || yawReal < yawMin)
             {
-                Serial.println("yaw deadzone reached");
                 isYawServoMoving = false;
             }
 
-            servoWaitTimeYaw = yawActualRequested * servoMillisecondsPerDegree;
+            servoWaitTimeYaw = max(servoMillisecondsPerDegree/2, abs(yawActualRequested * servoMillisecondsPerDegree));
+            
+            Serial.print("Yaw modifier: ");
+            Serial.print(yawRequested);
+            Serial.print(" Time to wait: ");
+            Serial.println(servoWaitTimeYaw);
             
             // move servo
             moveServo(ServoSelector::Yaw, (int)yawReal);
@@ -83,7 +87,7 @@ void loop() {
     }
     if (isPitchServoMoving == true)
     {
-        if (yawMoveTimer > servoWaitTimeYaw)
+        if (pitchMoveTimer > servoWaitTimePitch )
         {
             // calculate how long the move will take
             float pitchActualRequested = pitchRequested * damping;
@@ -91,14 +95,17 @@ void loop() {
 
             pitchRequested -= pitchActualRequested;
 
-            if (pitchRequested < abs(deadZone))
+            if (abs(pitchRequested) < deadZone || pitchReal > pitchMax || pitchReal < pitchMin)
             {
-                Serial.println("pitch deadzone reached");
                 isPitchServoMoving = false;
             }
 
-            servoWaitTimePitch = pitchActualRequested * servoMillisecondsPerDegree;
+            servoWaitTimePitch = max(servoMillisecondsPerDegree/2, abs(pitchActualRequested * servoMillisecondsPerDegree));
             
+            Serial.print("Pitch modifier: ");
+            Serial.print(pitchRequested);
+            Serial.print(" Time to wait: ");
+            Serial.println(servoWaitTimePitch);
             // move servo
             moveServo(ServoSelector::Pitch, (int)pitchReal);
             
@@ -117,7 +124,7 @@ void loop() {
             // this temporary copy is necessary to protect the original data
             //   because strtok() used in parseData() replaces the commas with \0
         packet = parseData();
-        showParsedData(packet);
+        // showParsedData(packet);
 
         if (strcmp(packet.message, "servo") == 0)
         {
@@ -136,7 +143,6 @@ void loop() {
                     isPitchServoMoving = true;
 
                 }
-
                  
             }
 

@@ -1,7 +1,8 @@
 # parts of the code are based on https://www.pyimagesearch.com/2016/01/04/unifying-picamera-and-cv2-videocapture-into-a-single-class-with-opencv/
 # before running the code install imutils for python3 (from https://github.com/pawelplodzpl/imutils)
+
 # in case of problems with camera image run:
-# sudo systemctl restart nvargus daemon
+# sudo systemctl restart nvargus-daemon
 
 
 import sys
@@ -82,7 +83,7 @@ vs = JetsonVideoStream(outputResolution=frameResolution)
 vs.start()
 
 # # initialize serial communication
-ser = serial.Serial(port='/dev/ttyACM0', baudrate=57600, timeout=0.05)
+ser = serial.Serial(port='/dev/ttyACM0', baudrate=115200, timeout=0.05)
 
 time.sleep(2.0)
 
@@ -139,7 +140,7 @@ while True:
 
                 screenMidPoint = width//2, height//2
                 distanceVector = tuple(map(lambda x, y: x - y, biggestObjectMidPoint, screenMidPoint))
-                # print("Vector: {}".format(distanceVector))
+
                 yaw = translate(distanceVector[0], -width//2, width//2, -HorizontalFOV//2, HorizontalFOV//2) # up-down
                 pitch = translate(distanceVector[1], -height//2, height//2, -VerticalFOV//2, VerticalFOV//2) # left-right
                 
@@ -213,7 +214,7 @@ while True:
     print(ser.read_all())
 
     loopEnd = time.time()
-    print("loop execution took {:3.2f}ms".format((loopEnd - loopStart)*1000))
+    # print("loop execution took {:3.2f}ms".format((loopEnd - loopStart)*1000))
     
 
     

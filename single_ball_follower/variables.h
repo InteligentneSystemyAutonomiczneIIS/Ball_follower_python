@@ -85,8 +85,8 @@ int pitchMin = 45, pitchMax = 135, pitchCenter = 90, pitchCurrent = 90;
 // Theoretical speed of the servo
 // 0.23s / 60 degrees (at 4.8V, no load)
 float servoMillisecondsPerDegree = 3.9;
-float damping = 0.1;
-int deadZone = 3;
+float damping = 0.05;
+int deadZone = 2;
 
 elapsedMillis yawMoveTimer;
 elapsedMillis pitchMoveTimer;
