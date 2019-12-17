@@ -61,6 +61,7 @@ void loop() {
         if (yawMoveTimer > servoWaitTimeYaw)
         {
             // calculate how long the move will take
+
             float yawActualRequested = yawRequested * damping;
             float yawReal = yawCurrent - yawActualRequested;
 
@@ -71,15 +72,23 @@ void loop() {
                 isYawServoMoving = false;
             }
 
-            servoWaitTimeYaw = max(servoMillisecondsPerDegree/2, abs(yawActualRequested * servoMillisecondsPerDegree));
+            servoWaitTimeYaw = max(servoMillisecondsPerDegree, abs(yawActualRequested * servoMillisecondsPerDegree));
             
-            Serial.print("Yaw modifier: ");
+            Serial.print("Yaw requested: ");
             Serial.print(yawRequested);
-            Serial.print(" Time to wait: ");
+            Serial.print(" Yaw actual requested: ");
+            Serial.print(yawActualRequested);
+            Serial.print(" Yaw real: ");
+            Serial.print(yawReal);
+            Serial.print(" Yaw current: ");
+            Serial.print(yawCurrent);
+            Serial.print(" Time to wait: ");            
             Serial.println(servoWaitTimeYaw);
             
+            int temp = yawActualRequested < 0 ? ceil(yawReal) : floor(yawReal);
+
             // move servo
-            moveServo(ServoSelector::Yaw, (int)yawReal);
+            moveServo(ServoSelector::Yaw, (int)temp);
             
             //set timing variables and block movement
             yawMoveTimer = 0;
@@ -100,14 +109,17 @@ void loop() {
                 isPitchServoMoving = false;
             }
 
-            servoWaitTimePitch = max(servoMillisecondsPerDegree/2, abs(pitchActualRequested * servoMillisecondsPerDegree));
+            servoWaitTimePitch = max(servoMillisecondsPerDegree, abs(pitchActualRequested * servoMillisecondsPerDegree));
             
             Serial.print("Pitch modifier: ");
             Serial.print(pitchRequested);
             Serial.print(" Time to wait: ");
             Serial.println(servoWaitTimePitch);
+
+            int temp = pitchActualRequested < 0 ? ceil(pitchReal) : floor(pitchReal);
+
             // move servo
-            moveServo(ServoSelector::Pitch, (int)pitchReal);
+            moveServo(ServoSelector::Pitch, (int)temp);
             
             //set timing variables and block movement
             pitchMoveTimer = 0;
