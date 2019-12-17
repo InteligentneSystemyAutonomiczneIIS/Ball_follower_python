@@ -9,6 +9,11 @@ This code is based on the examples at http://forum.arduino.cc/index.php?topic=39
 #include "functions.hpp"
 // #include "helper.h"
 
+float YawCalibrationCenter = 80.0f;
+float PitchCalibrationCenter = 58.0f;
+float HorizontalFOV = 62.0f;
+float VerticalFOV = 37.0f;
+
 const byte numChars = 64;
 char receivedChars[numChars];
 char tempChars[numChars];        // temporary array for use when parsing
@@ -21,6 +26,10 @@ boolean newData = false;
 
 int yawRequested = 0;
 int pitchRequested = 0;
+
+
+float yawErrorAccumulated = 0;
+float pitchErrorAccumulated = 0;
 //============
 
 void setup() {
@@ -30,13 +39,11 @@ void setup() {
     Serial.println("Enter data in this style <HelloWorld, 12, 24.7>  ");
     Serial.println();
 
-
-
     initMotors();
 
     // Each platform has to do this independently, checked manually
-    calibrateServo(ServoSelector::Yaw, 80);
-    calibrateServo(ServoSelector::Pitch, 58);
+    calibrateServo(ServoSelector::Yaw, (int)YawCalibrationCenter);
+    calibrateServo(ServoSelector::Pitch, (int)PitchCalibrationCenter);
 
     initServos();
     centerServos();
@@ -53,81 +60,9 @@ void setup() {
 //============
 
 
+
 void loop() {
-
-    // Check if servos finished movement
-    if (isYawServoMoving == true )
-    {
-        if (yawMoveTimer > servoWaitTimeYaw)
-        {
-            // calculate how long the move will take
-
-            float yawActualRequested = yawRequested * damping;
-            float yawReal = yawCurrent - yawActualRequested;
-
-            yawRequested -= yawActualRequested;
-
-            if (abs(yawRequested) < deadZone || yawReal > yawMax || yawReal < yawMin)
-            {
-                isYawServoMoving = false;
-            }
-
-            servoWaitTimeYaw = max(servoMillisecondsPerDegree, abs(yawActualRequested * servoMillisecondsPerDegree));
-            
-            Serial.print("Yaw requested: ");
-            Serial.print(yawRequested);
-            Serial.print(" Yaw actual requested: ");
-            Serial.print(yawActualRequested);
-            Serial.print(" Yaw real: ");
-            Serial.print(yawReal);
-            Serial.print(" Yaw current: ");
-            Serial.print(yawCurrent);
-            Serial.print(" Time to wait: ");            
-            Serial.println(servoWaitTimeYaw);
-            
-            int temp = yawActualRequested < 0 ? ceil(yawReal) : floor(yawReal);
-
-            // move servo
-            moveServo(ServoSelector::Yaw, (int)temp);
-            
-            //set timing variables and block movement
-            yawMoveTimer = 0;
-        }
-    }
-    if (isPitchServoMoving == true)
-    {
-        if (pitchMoveTimer > servoWaitTimePitch )
-        {
-            // calculate how long the move will take
-            float pitchActualRequested = pitchRequested * damping;
-            float pitchReal = pitchCurrent - pitchActualRequested;
-
-            pitchRequested -= pitchActualRequested;
-
-            if (abs(pitchRequested) < deadZone || pitchReal > pitchMax || pitchReal < pitchMin)
-            {
-                isPitchServoMoving = false;
-            }
-
-            servoWaitTimePitch = max(servoMillisecondsPerDegree, abs(pitchActualRequested * servoMillisecondsPerDegree));
-            
-            Serial.print("Pitch modifier: ");
-            Serial.print(pitchRequested);
-            Serial.print(" Time to wait: ");
-            Serial.println(servoWaitTimePitch);
-
-            int temp = pitchActualRequested < 0 ? ceil(pitchReal) : floor(pitchReal);
-
-            // move servo
-            moveServo(ServoSelector::Pitch, (int)temp);
-            
-            //set timing variables and block movement
-            pitchMoveTimer = 0;
-        }
-        
-    }
-
-
+      
     // parse input data
     recvWithStartEndMarkers();
 
@@ -142,18 +77,33 @@ void loop() {
         {
             if (isStopped == false)
             {
+                yawRequested = packet.first;
+                pitchRequested = packet.second;
 
-                if (isYawServoMoving == false)
+                if (yawRequested != 0)
                 {
-                    yawRequested = packet.first;
-                    isYawServoMoving = true;     
+                    float yawError = -(yawRequested / (HorizontalFOV/2) );
+                    float Kp = 25.0f;
+                    float Ki = 4.0f;
+
+                    float output = Kp * yawError + Ki * yawErrorAccumulated;
+                    yawErrorAccumulated += yawError;
+                    
+                    moveServo(ServoSelector::Yaw, (int)(YawCalibrationCenter + output));
 
                 }
-                if (isPitchServoMoving == false)
+                if (pitchRequested != 0)
                 {
-                    pitchRequested = packet.second;
-                    isPitchServoMoving = true;
+                    // calculate how long the move will take
+                    float pitchError = -(pitchRequested / (VerticalFOV/2));
+                    float Kp = 15.0f;
+                    float Ki = 3.0f;
 
+                    float output = Kp * pitchError + Ki * pitchErrorAccumulated;
+                    pitchErrorAccumulated += pitchError;
+                    
+                    // move servo
+                    moveServo(ServoSelector::Pitch,  (int)(PitchCalibrationCenter + output));
                 }
                  
             }
