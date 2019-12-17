@@ -11,8 +11,6 @@ This code is based on the examples at http://forum.arduino.cc/index.php?topic=39
 
 float YawCalibrationCenter = 80.0f;
 float PitchCalibrationCenter = 58.0f;
-float HorizontalFOV = 62.0f;
-float VerticalFOV = 37.0f;
 
 const byte numChars = 64;
 char receivedChars[numChars];
@@ -24,8 +22,8 @@ dataPacket packet;
 boolean newData = false;
 
 
-int yawRequested = 0;
-int pitchRequested = 0;
+float yawRequested = 0;
+float pitchRequested = 0;
 
 
 float yawErrorAccumulated = 0;
@@ -80,9 +78,9 @@ void loop() {
                 yawRequested = packet.first;
                 pitchRequested = packet.second;
 
-                if (yawRequested != 0)
                 {
-                    float yawError = -(yawRequested / (HorizontalFOV/2) );
+                    // float yawError = -(yawRequested / (HorizontalFOV/2) );
+                    float yawError = -yawRequested;
                     float Kp = 25.0f;
                     float Ki = 4.0f;
 
@@ -92,10 +90,10 @@ void loop() {
                     moveServo(ServoSelector::Yaw, (int)(YawCalibrationCenter + output));
 
                 }
-                if (pitchRequested != 0)
                 {
-                    // calculate how long the move will take
-                    float pitchError = -(pitchRequested / (VerticalFOV/2));
+                    
+                    // float pitchError = -(pitchRequested / (VerticalFOV/2));
+                    float pitchError = - pitchRequested;
                     float Kp = 15.0f;
                     float Ki = 3.0f;
 
@@ -168,12 +166,12 @@ dataPacket parseData() {      // split the data into its parts
 
     strtokIndx = strtok(tempChars,",");      // get the first part - the string
     strcpy(tmpPacket.message, strtokIndx); // copy it to messageFromPC
- 
+
     strtokIndx = strtok(NULL, ","); // this continues where the previous call left off
-    tmpPacket.first = atoi(strtokIndx);     // convert this part to an integer
+    tmpPacket.first = atof(strtokIndx);
 
     strtokIndx = strtok(NULL, ",");
-    tmpPacket.second = atof(strtokIndx);     // convert this part to a float
+    tmpPacket.second = atof(strtokIndx);
 
     return tmpPacket;
 }

@@ -10,8 +10,8 @@
 struct dataPacket 
 {
     char message[64] = {0};
-    int first = 0;
-    int second = 0;
+    float first = 0.0f;
+    float second = 0.0f;
 
 };
 

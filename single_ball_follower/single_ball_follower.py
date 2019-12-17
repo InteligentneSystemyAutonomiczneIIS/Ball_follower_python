@@ -142,13 +142,15 @@ while True:
                 distanceVector = tuple(map(lambda x, y: x - y, biggestObjectMidPoint, screenMidPoint))
 
                 yaw = translate(distanceVector[0], -width//2, width//2, -HorizontalFOV//2, HorizontalFOV//2) # up-down
+                yawError = yaw / (HorizontalFOV/2) 
                 pitch = translate(distanceVector[1], -height//2, height//2, -VerticalFOV//2, VerticalFOV//2) # left-right
-                
-                print("Yaw: {} deg, Pitch: {} deg\n".format(yaw, pitch))
+                pitchError = pitch / (VerticalFOV/2)
+
+                print("Yaw error: {}, Pitch error: {}\n".format(yawError, pitchError))
                 
                 
                 cv2.line(frame, screenMidPoint, biggestObjectMidPoint, (0, 0, 255))
-                packet = '<servo, {}, {}>'.format(yaw, pitch)
+                packet = '<servo, {}, {}>'.format(yawError, pitchError)
                 packetBytes = bytes(packet, 'utf-8')
                 
                 ser.write(packetBytes)
