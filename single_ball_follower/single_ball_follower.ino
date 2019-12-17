@@ -5,9 +5,14 @@ This code is based on the examples at http://forum.arduino.cc/index.php?topic=39
 
 // Example 5 - parsing text and numbers with start and end markers in the stream
 
-#include "helper.h"
+#include "variables.h"
+#include "functions.hpp"
+// #include "helper.h"
 
-const byte numChars = 32;
+float YawCalibrationCenter = 80.0f;
+float PitchCalibrationCenter = 58.0f;
+
+const byte numChars = 64;
 char receivedChars[numChars];
 char tempChars[numChars];        // temporary array for use when parsing
 
@@ -16,25 +21,103 @@ dataPacket packet;
 
 boolean newData = false;
 
+
+float yawRequested = 0;
+float pitchRequested = 0;
+
+
+float yawErrorAccumulated = 0;
+float pitchErrorAccumulated = 0;
 //============
 
 void setup() {
-    Serial.begin(9600);
+
+    initSerial(115200);
     Serial.println("This demo expects 3 pieces of data - text, an integer and a floating point value");
     Serial.println("Enter data in this style <HelloWorld, 12, 24.7>  ");
     Serial.println();
+
+    initMotors();
+
+    // Each platform has to do this independently, checked manually
+    calibrateServo(ServoSelector::Yaw, (int)YawCalibrationCenter);
+    calibrateServo(ServoSelector::Pitch, (int)PitchCalibrationCenter);
+
+    initServos();
+    centerServos();
+
+    initESP826();
+    // initLED();
+    Brake();
+    delay(500);
+
+    // Serial.println("Initalization ended");
+
 }
 
 //============
 
+
+
 void loop() {
+      
+    // parse input data
     recvWithStartEndMarkers();
+
     if (newData == true) {
         strcpy(tempChars, receivedChars);
             // this temporary copy is necessary to protect the original data
             //   because strtok() used in parseData() replaces the commas with \0
         packet = parseData();
-        showParsedData(packet);
+        // showParsedData(packet);
+
+        if (strcmp(packet.message, "servo") == 0)
+        {
+            if (isStopped == false)
+            {
+                yawRequested = packet.first;
+                pitchRequested = packet.second;
+
+                {
+                    // float yawError = -(yawRequested / (HorizontalFOV/2) );
+                    float yawError = -yawRequested;
+                    float Kp = 25.0f;
+                    float Ki = 4.0f;
+
+                    float output = Kp * yawError + Ki * yawErrorAccumulated;
+                    yawErrorAccumulated += yawError;
+                    
+                    moveServo(ServoSelector::Yaw, (int)(YawCalibrationCenter + output));
+
+                }
+                {
+                    
+                    // float pitchError = -(pitchRequested / (VerticalFOV/2));
+                    float pitchError = - pitchRequested;
+                    float Kp = 15.0f;
+                    float Ki = 3.0f;
+
+                    float output = Kp * pitchError + Ki * pitchErrorAccumulated;
+                    pitchErrorAccumulated += pitchError;
+                    
+                    // move servo
+                    moveServo(ServoSelector::Pitch,  (int)(PitchCalibrationCenter + output));
+                }
+                 
+            }
+
+        }
+
+        if (strcmp(packet.message, "stop") == 0)
+        {
+            isStopped = true;
+        }
+
+        if (strcmp(packet.message, "start") == 0)
+        {
+            isStopped = false;
+        }
+
         newData = false;
     }
 }
@@ -83,12 +166,12 @@ dataPacket parseData() {      // split the data into its parts
 
     strtokIndx = strtok(tempChars,",");      // get the first part - the string
     strcpy(tmpPacket.message, strtokIndx); // copy it to messageFromPC
- 
+
     strtokIndx = strtok(NULL, ","); // this continues where the previous call left off
-    tmpPacket.packet_int = atoi(strtokIndx);     // convert this part to an integer
+    tmpPacket.first = atof(strtokIndx);
 
     strtokIndx = strtok(NULL, ",");
-    tmpPacket.packet_float = atof(strtokIndx);     // convert this part to a float
+    tmpPacket.second = atof(strtokIndx);
 
     return tmpPacket;
 }
@@ -97,8 +180,8 @@ dataPacket parseData() {      // split the data into its parts
 void showParsedData(dataPacket packet) {
     Serial.print("Message ");
     Serial.println(packet.message);
-    Serial.print("Integer ");
-    Serial.println(packet.packet_int);
-    Serial.print("Float ");
-    Serial.println(packet.packet_float);
+    Serial.print("Yaw ");
+    Serial.println(packet.first);
+    Serial.print("Pitch ");
+    Serial.println(packet.second);
 }
